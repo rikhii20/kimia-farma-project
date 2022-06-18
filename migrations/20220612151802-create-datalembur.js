@@ -24,10 +24,13 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       durasi: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.FLOAT,
       },
       goal_pekerjaan: {
         type: Sequelize.STRING,
+      },
+      datetime: {
+        type: Sequelize.DATE,
       },
       user_id: {
         type: Sequelize.INTEGER,

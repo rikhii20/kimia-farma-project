@@ -1,5 +1,7 @@
-const { User } = require("../models");
+const { User, DataLembur } = require("../models");
 const joi = require("joi");
+const moment = require("moment");
+const { Op } = require("sequelize");
 const errorHandler = require("../utils/error-handler");
 
 module.exports = {
@@ -52,11 +54,65 @@ module.exports = {
   },
   getUser: async (req, res) => {
     const { id: user_id } = req.params;
+    let { date } = req.query;
     try {
+      let dateRange;
+      let first, last;
+      switch (date) {
+        case "today":
+          first = moment().tz("UTC").startOf("day").toDate();
+          last = moment().tz("UTC").endOf("day").toDate();
+          dateRange = {
+            datetime: {
+              [Op.between]: [first, last],
+            },
+          };
+          break;
+        case "month":
+          first = moment().tz("UTC").startOf("month").toDate();
+          last = moment().tz("UTC").endOf("month").toDate();
+          dateRange = {
+            datetime: {
+              [Op.between]: [first, last],
+            },
+          };
+          break;
+        case "year":
+          first = moment().tz("UTC").startOf("year").toDate();
+          last = moment().tz("UTC").endOf("year").toDate();
+          dateRange = {
+            datetime: {
+              [Op.between]: [first, last],
+            },
+          };
+          break;
+      }
+
       const user = await User.findOne({
         where: {
           id: user_id,
         },
+        order: [["data_lemburs", "createdAt", "ASC"]],
+        include: [
+          {
+            model: DataLembur,
+            as: "data_lemburs",
+            where: {
+              ...dateRange,
+            },
+            required: false,
+            attributes: [
+              "id",
+              "tanggal",
+              "uraian_pekerjaan",
+              "jam_Datang",
+              "jam_pulang",
+              "istirahat",
+              "durasi",
+              "goal_pekerjaan",
+            ],
+          },
+        ],
       });
       if (!user) {
         return res.status(404).json({
@@ -65,10 +121,20 @@ module.exports = {
           result: {},
         });
       }
+
+      const userStringify = JSON.stringify(user);
+      const userJsonParse = JSON.parse(userStringify);
+      const arrDurasi = [];
+      for (let i = 0; i < userJsonParse.data_lemburs.length; i++) {
+        const duration = userJsonParse.data_lemburs[i].durasi;
+        arrDurasi.push(duration);
+      }
+      const totalDuration = arrDurasi.reduce((a, b) => a + b, 0);
+
       return res.status(200).json({
         status: "Success",
         message: "Successfully to retrieve user",
-        result: user,
+        result: { user, total_duration: totalDuration },
       });
     } catch (error) {
       errorHandler(error, res);

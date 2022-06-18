@@ -22,8 +22,9 @@ module.exports = (sequelize, DataTypes) => {
       jam_datang: DataTypes.TIME,
       jam_pulang: DataTypes.TIME,
       istirahat: DataTypes.INTEGER,
-      durasi: DataTypes.INTEGER,
+      durasi: DataTypes.FLOAT,
       goal_pekerjaan: DataTypes.STRING,
+      datetime: DataTypes.DATE,
       user_id: DataTypes.INTEGER,
     },
     {

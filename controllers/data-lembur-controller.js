@@ -47,8 +47,8 @@ module.exports = {
           result: {},
         });
       }
-      const datang = new Date(`${tanggal}T${jam_datang}`);
-      const pulang = new Date(`${tanggal}T${jam_pulang}`);
+      const datang = new Date(`${tanggal}T${jam_datang}Z`);
+      const pulang = new Date(`${tanggal}T${jam_pulang}Z`);
       const diff = (pulang - datang) / 3600000 - istirahat;
       const dataLembur = await DataLembur.create({
         tanggal,
@@ -58,6 +58,7 @@ module.exports = {
         istirahat,
         durasi: diff,
         goal_pekerjaan,
+        datetime: new Date(datang).toLocaleString(),
         user_id,
       });
       return res.status(201).json({
@@ -163,6 +164,7 @@ module.exports = {
         where: { id: data_id },
       });
 
+      const tanggalLembur = dataLembur.tanggal;
       const durasi = dataLembur.durasi;
       const jamDatang = dataLembur.jam_datang;
       const jamPulang = dataLembur.jam_pulang;
@@ -208,18 +210,20 @@ module.exports = {
       if (
         jamDatang != updatedDataLembur.jam_datang ||
         jamPulang != updatedDataLembur.jam_pulang ||
-        durasiIstirahat != updatedDataLembur.istirahat
+        durasiIstirahat != updatedDataLembur.istirahat ||
+        tanggalLembur != updatedDataLembur.tanggal
       ) {
         const datang = new Date(
-          `${updatedDataLembur.tanggal}T${updatedDataLembur.jam_datang}`
+          `${updatedDataLembur.tanggal}T${updatedDataLembur.jam_datang}Z`
         );
         const pulang = new Date(
-          `${updatedDataLembur.tanggal}T${updatedDataLembur.jam_pulang}`
+          `${updatedDataLembur.tanggal}T${updatedDataLembur.jam_pulang}Z`
         );
-        const diff = (pulang - datang) / 3600000 - istirahat;
+        const diff = (pulang - datang) / 3600000 - updatedDataLembur.istirahat;
         await DataLembur.update(
           {
             durasi: diff,
+            datetime: new Date(datang).toLocaleString(),
           },
           {
             where: {

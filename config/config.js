@@ -7,7 +7,6 @@ module.exports = {
     host: process.env.DEV_HOST,
     dialect: process.env.DEV_DIALECT,
     port: process.env.DEV_PORT || 1313,
-    timezone: "+08:00",
   },
   test: {
     username: process.env.TEST_USERNAME,
