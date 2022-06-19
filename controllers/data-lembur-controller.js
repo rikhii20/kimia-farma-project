@@ -1,7 +1,9 @@
 const { DataLembur, User } = require("../models");
 const joi = require("joi").extend(require("@joi/date"));
 const errorHandler = require("../utils/error-handler");
+const exceljs = require("exceljs");
 const moment = require("moment");
+const { object } = require("joi");
 
 module.exports = {
   createLembur: async (req, res) => {
@@ -276,6 +278,65 @@ module.exports = {
         status: "Success",
         message: "Successfully to delete the data",
         result: dataLembur,
+      });
+    } catch (error) {
+      errorHandler(error, res);
+    }
+  },
+  exportDataToExcel: async (req, res) => {
+    const { id: user_id } = req.params;
+    try {
+      const dataUser = await DataLembur.findAll({
+        where: { user_id },
+        attributes: [
+          "id",
+          "tanggal",
+          "uraian_pekerjaan",
+          "jam_datang",
+          "jam_pulang",
+          "istirahat",
+          "durasi",
+          "goal_pekerjaan",
+        ],
+      });
+      if (!dataUser) {
+        return res.status(404).json({
+          status: "Not Found",
+          message: `Can't find data with user id ${user_id}`,
+        });
+      }
+      const dataToString = JSON.stringify(dataUser);
+      const data = JSON.parse(dataToString);
+
+      const workbook = new exceljs.Workbook();
+      const worsksheet = workbook.addWorksheet("data_lembur");
+      const path = "./files";
+      worsksheet.columns = [
+        { header: "ID", key: "id", width: 10 },
+        { header: "Tanggal", key: "tanggal", width: 10 },
+        { header: "Uraian Pekerjaan", key: "uraian_pekerjaan", width: 10 },
+        { header: "Jam Datang", key: "jam_datang", width: 10 },
+        { header: "Jam Pulang", key: "jam_pulang", width: 10 },
+        { header: "Istirahat", key: "istirahat", width: 10 },
+        { header: "Total Jam Kerja", key: "durasi", width: 10 },
+        { header: "Goal Pekerjaan", key: "goal_pekerjaan", width: 10 },
+      ];
+      let counter = 1;
+      data.forEach((e) => {
+        e.id = counter;
+        worsksheet.addRow(e);
+        counter++;
+      });
+      worsksheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+      const writeExcel = await workbook.xlsx.writeFile(
+        `${path}/data_lembur.xlsx`
+      );
+      return res.status(200).json({
+        status: "Success",
+        message: "File successfully downloaded",
+        result: `${path}/data_lembur.xlsx`,
       });
     } catch (error) {
       errorHandler(error, res);
